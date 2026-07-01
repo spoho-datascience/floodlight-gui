@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry 2.x
+        run: pipx install "poetry>=2,<3"
+      - name: Install dev tools only
+        run: |
+          poetry env use python
+          poetry install --only dev
+      - name: ruff check
+        run: poetry run ruff check src tests
+      - name: ruff format check
+        run: poetry run ruff format --check src tests
+
+  test:
+    name: Test (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Full cross-product: every supported Python on every OS.
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Poetry 2.x
+        run: pipx install "poetry>=2,<3"
+      - name: Install project + dev deps
+        run: |
+          poetry env use python
+          poetry install
+      - name: Run the suite
+        run: poetry run pytest -q
+
+  test-video-extra:
+    name: Test with the video extra
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry 2.x
+        run: pipx install "poetry>=2,<3"
+      - name: Install with --all-extras (pulls imageio + ffmpeg)
+        run: |
+          poetry env use python
+          poetry install --all-extras
+      - name: Run the suite (video path active)
+        run: poetry run pytest -q
+
+  build:
+    name: Build + verify the wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry 2.x
+        run: pipx install "poetry>=2,<3"
+      - name: Build sdist + wheel
+        run: poetry build
+      - name: Install the built wheel into a clean env and smoke-test it
+        run: |
+          python -m venv /tmp/wheeltest
+          /tmp/wheeltest/bin/python -m pip install --upgrade pip --quiet
+          /tmp/wheeltest/bin/python -m pip install --quiet dist/*.whl
+          # Prove the package imports from the INSTALLED wheel and the pitch
+          # assets actually shipped (the src-layout payoff).
+          /tmp/wheeltest/bin/python -c "import floodlight_gui; from importlib.resources import files; n=sorted(p.name for p in files('floodlight_gui.assets.pitches').iterdir() if p.name.endswith('.png')); assert n==['football.png','handball.png'], n; print('wheel asset smoke OK:', n)"
+          # Prove the console entry point installed (do not launch the GUI).
+          test -x /tmp/wheeltest/bin/floodlight-gui && echo "console script installed"
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+# Least privilege by default; jobs opt into exactly what they need.
+permissions: {}
+
+jobs:
+  build-dist:
+    name: Build wheel + sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pipx install "poetry>=2,<3"
+      - run: poetry build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  build-exe:
+    name: Build executable (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  label: linux-x86_64 }
+          - { os: windows-latest, label: windows-x86_64 }
+          - { os: macos-13,       label: macos-intel }
+          - { os: macos-latest,   label: macos-arm64 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pipx install "poetry>=2,<3"
+      - name: Install app + deps (with the video extra so ffmpeg bundles)
+        run: |
+          poetry env use python
+          poetry install --all-extras
+      - name: Install PyInstaller into the project venv
+        run: poetry run python -m pip install "pyinstaller>=6,<7"
+      - name: Build the one-dir bundle
+        run: poetry run pyinstaller floodlight-gui.spec --noconfirm
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path dist/floodlight-gui/* -DestinationPath floodlight-gui-${{ matrix.label }}.zip
+      - name: Package (Linux / macOS)
+        if: runner.os != 'Windows'
+        run: cd dist && zip -r ../floodlight-gui-${{ matrix.label }}.zip floodlight-gui
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exe-${{ matrix.label }}
+          path: floodlight-gui-${{ matrix.label }}.zip
+
+  publish-pypi:
+    name: Publish to PyPI (Trusted Publishing)
+    needs: build-dist
+    runs-on: ubuntu-latest
+    # Configure on PyPI: a trusted publisher / pending publisher for the
+    # project "floodlight-gui" pointing at this repo, workflow "release.yml",
+    # and environment "pypi" (create a matching GitHub environment too).
+    environment:
+      name: pypi
+      url: https://pypi.org/p/floodlight-gui
+    permissions:
+      id-token: write  # OIDC token for Trusted Publishing (no API token needed)
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: GitHub Release (+ binaries)
+    needs: [build-dist, build-exe]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create the release and upload assets
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Stage release assets
+        run: |
+          mkdir -p release
+          cp artifacts/dist/* release/
+          cp artifacts/exe-*/*.zip release/
+          ls -la release
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

@@ -1,0 +1,30 @@
+
+# Python bytecode and packaging
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Build artifacts
+build/
+dist/
+
+# Virtual environments and secrets
+venv/
+.venv/
+.env
+
+# Test, lint, and coverage caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editor, OS, and tool artifacts
+.idea/
+
+# App output and local data
+exports/
+data/
+data_local/
+*.log

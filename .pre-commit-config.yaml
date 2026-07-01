@@ -1,0 +1,14 @@
+# Pre-commit hooks for floodlight-gui.
+#
+# One-time setup:  pip install pre-commit  then  pre-commit install
+# Run on all files: pre-commit run --all-files
+#
+# Runs the same ruff lint + format gates as CI on each commit (the lint hook
+# auto-fixes what it can). Keep `rev` in step with the ruff version in the lock.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.20
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format

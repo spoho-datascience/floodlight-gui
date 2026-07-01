@@ -1,0 +1,113 @@
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "floodlight-gui"
+version = "0.1.0"
+description = "Dear PyGui frontend for the floodlight sports analytics package"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10,<3.14"
+
+authors = [
+    { name = "Manuel Bassek", email = "m.bassek@dshs-koeln.de" },
+]
+
+keywords = [
+    "sports", "analytics", "tracking", "football", "handball",
+    "gui", "floodlight", "visualization",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Environment :: X11 Applications",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: MacOS X",
+]
+
+dependencies = [
+    "dearpygui>=2.1,<3",
+    "docstring_parser>=0.16,<0.19",
+    "floodlight>=1.2,<2",
+    "numpy>=2.0.1,<3",
+    "pandas>=2.1,<3",
+    "matplotlib>=3.8,<4",
+    "platformdirs>=4.0,<5",
+]
+
+[project.optional-dependencies]
+# MP4 clip export. Brings a bundled ffmpeg via imageio-ffmpeg.
+video = [
+    "imageio[ffmpeg]>=2.34,<3",
+]
+
+[project.scripts]
+floodlight-gui = "floodlight_gui.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/spoho-datascience/floodlight-gui"
+Repository = "https://github.com/spoho-datascience/floodlight-gui"
+Issues = "https://github.com/spoho-datascience/floodlight-gui/issues"
+Changelog = "https://github.com/spoho-datascience/floodlight-gui/blob/main/CHANGELOG.md"
+
+[tool.poetry]
+# src layout: the importable package lives under src/.
+packages = [{ include = "floodlight_gui", from = "src" }]
+# Non-.py package data to ship: the pitch images and the typing marker.
+include = [
+    { path = "src/floodlight_gui/assets/**/*.png", format = ["sdist", "wheel"] },
+    { path = "src/floodlight_gui/py.typed", format = ["sdist", "wheel"] },
+    { path = "tests", format = "sdist" },
+    { path = "CHANGELOG.md", format = "sdist" },
+]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0"
+# The [md] extra pulls cmarkgfm for the README-renders test.
+readme_renderer = { version = ">=42.0", extras = ["md"] }
+ruff = ">=0.5"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+pythonpath = ["src"]
+addopts = ["-ra", "--import-mode=importlib"]
+
+# Measure coverage on the package only, excluding test files and site-packages.
+[tool.coverage.run]
+source = ["floodlight_gui"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "BLE"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+# Broad-except (BLE001) is allowed only at DPG-callback, background-thread, and
+# optional-import boundaries, each carrying an inline `# noqa: BLE001` rationale.
+"src/floodlight_gui/core/optional_features.py" = ["BLE001"]
+"src/floodlight_gui/tabs/_shared/broadcast.py" = ["BLE001"]
+"src/floodlight_gui/tabs/_shared/help_popup.py" = ["BLE001"]
+"src/floodlight_gui/tabs/visualization/controls.py" = ["BLE001"]
+"src/floodlight_gui/tabs/visualization/export_writers.py" = ["BLE001"]
+"src/floodlight_gui/tabs/visualization/render_loop.py" = ["BLE001"]
+"src/floodlight_gui/tabs/inspect/render.py" = ["BLE001"]
+"src/floodlight_gui/tabs/metrics/execute.py" = ["BLE001"]
+"src/floodlight_gui/engine/load_data.py" = ["BLE001"]
+# Tests use broad exception handling for negative-path cases.
+"tests/**" = ["BLE001"]
