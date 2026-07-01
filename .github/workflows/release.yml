@@ -32,7 +32,6 @@ jobs:
         include:
           - { os: ubuntu-latest,  label: linux-x86_64 }
           - { os: windows-latest, label: windows-x86_64 }
-          - { os: macos-13,       label: macos-intel }
           - { os: macos-latest,   label: macos-arm64 }
     steps:
       - uses: actions/checkout@v4
