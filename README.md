@@ -99,7 +99,25 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the local 
 
 If you use floodlight-gui in research, please cite the underlying library:
 
-> Raabe, D., et al. (2022). floodlight: A high-level, data-driven sports analytics framework. arXiv:2206.02562.
+```
+@article{Raabe2022,
+    doi = {10.21105/joss.04588},
+    url = {https://doi.org/10.21105/joss.04588},
+    year = {2022},
+    publisher = {The Open Journal},
+    volume = {7},
+    number = {76},
+    pages = {4588},
+    author = {Dominik Raabe and Henrik Biermann and Manuel Bassek and Martin Wohlan and Rumena Komitova
+              and Robert Rein and Tobias Kuppens Groot and Daniel Memmert},
+    title = {floodlight - A high-level, data-driven sports analytics framework},
+    journal = {Journal of Open Source Software}
+}
+```
+
+## Acknowledgements
+
+This project has received funding by the BMBF (Bundesministerium für Bildung und Forschung, [01IS20021A](https://www.softwaresysteme.dlr-pt.de/media/content/01IS20021_Projektblatt_MM4SPA.pdf)) and the DFG (Deutsche Forschungsgemeinschaft, [ME 2678/43-1](https://gepris.dfg.de/gepris/projekt/522904388)) and has been kindly supported by the [Institute of Exercise Training and Sport Informatics](https://www.dshs-koeln.de/en/institut-fuer-trainingswissenschaft-und-sportinformatik/) at the German Sport University Cologne.
 
 ## License
 
